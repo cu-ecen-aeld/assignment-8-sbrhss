@@ -1,0 +1,29 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          misc-modules-init
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Load misc-modules
+### END INIT INFO
+
+case "$1" in
+    start)
+        echo "Loading misc-modules"
+        modprobe hello || insmod /lib/modules/$(uname -r)/hello.ko
+        # For faulty module, use insmod if CONFIG_MD_FAULTY is built-in
+        insmod /lib/modules/$(uname -r)/faulty.ko || true
+        ;;
+    stop)
+        echo "Unloading misc-modules"
+        rmmod faulty || true
+        rmmod hello || true
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+
+exit 0
