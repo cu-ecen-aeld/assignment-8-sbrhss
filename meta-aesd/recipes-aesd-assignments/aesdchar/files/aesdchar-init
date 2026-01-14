@@ -1,0 +1,50 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          aesdchar-init
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Load aesdchar module
+### END INIT INFO
+
+module=aesdchar
+device=aesdchar
+mode="664"
+
+# Group: since distributions do it differently, look for wheel or use staff
+if grep -q '^staff:' /etc/group; then
+    group="staff"
+else
+    group="wheel"
+fi
+
+case "$1" in
+    start)
+        echo "Loading aesdchar module"
+        modprobe ${module} || insmod /lib/modules/$(uname -r)/${module}.ko
+        
+        # Get major number and create device node
+        major=$(awk "\$2==\"$module\" {print \$1}" /proc/devices)
+        if [ -n "$major" ]; then
+            rm -f /dev/${device}
+            mknod /dev/${device} c $major 0
+            chgrp $group /dev/${device}
+            chmod $mode /dev/${device}
+            echo "Created /dev/${device} with major number $major"
+        else
+            echo "Warning: Could not find major number for ${module}"
+        fi
+        ;;
+    stop)
+        echo "Unloading aesdchar module"
+        rm -f /dev/${device}
+        rmmod ${module} || true
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+
+exit 0
